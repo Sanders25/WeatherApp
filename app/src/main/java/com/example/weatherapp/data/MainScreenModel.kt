@@ -1,4 +1,7 @@
 package com.example.weatherapp.data
 
-class MainScreenModle {
+data class MainScreenModel(
+    val currentTemp: Int,
+    // TODO
+) {
 }

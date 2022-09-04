@@ -1,4 +1,4 @@
-package com.example.weatherapp.data
+package com.example.weatherapp.di
 
 import com.example.weatherapp.data.local.WeatherLocalRepository
 import dagger.Module
