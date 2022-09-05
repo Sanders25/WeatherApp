@@ -50,8 +50,8 @@ fun WeatherAppTheme(
         header = TextStyle(
             fontSize = when (textSize) {
                 WeatherAppSizes.Small -> 24.sp
-                WeatherAppSizes.Medium -> 28.sp
-                WeatherAppSizes.Big -> 32.sp
+                WeatherAppSizes.Medium -> 32.sp
+                WeatherAppSizes.Big -> 36.sp
             },
             fontFamily = Dosis,
             fontWeight = FontWeight.Bold
@@ -67,8 +67,8 @@ fun WeatherAppTheme(
         caption = TextStyle(
             fontSize = when (textSize) {
                 WeatherAppSizes.Small -> 10.sp
-                WeatherAppSizes.Medium -> 12.sp
-                WeatherAppSizes.Big -> 14.sp
+                WeatherAppSizes.Medium -> 16.sp
+                WeatherAppSizes.Big -> 22.sp
             },
             fontFamily = Dosis,
             fontWeight = FontWeight.Normal

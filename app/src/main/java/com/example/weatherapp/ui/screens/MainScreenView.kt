@@ -1,12 +1,12 @@
-@file:OptIn(ExperimentalMaterialApi::class)
+@file:OptIn(ExperimentalMaterialApi::class, ExperimentalPermissionsApi::class)
 
 package com.example.weatherapp.ui.screens
 
+import android.Manifest
 import android.graphics.drawable.Icon
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.Crossfade
-import androidx.compose.animation.core.animateDp
-import androidx.compose.animation.core.updateTransition
+import androidx.compose.animation.core.*
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.background
@@ -20,10 +20,13 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Alignment.Companion.CenterVertically
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.painter.Painter
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
@@ -38,6 +41,8 @@ import com.example.weatherapp.ui.theme.WeatherAppCorners
 import com.example.weatherapp.ui.theme.WeatherAppTheme
 import com.example.weatherapp.ui.theme.WeatherAppTypography
 import com.example.weatherapp.ui.theme.gradients
+import com.google.accompanist.permissions.ExperimentalPermissionsApi
+import com.google.accompanist.permissions.rememberMultiplePermissionsState
 import kotlinx.coroutines.launch
 import kotlin.math.roundToInt
 
@@ -53,13 +58,17 @@ fun TodayScreen(viewModel: MainScreenViewModel = hiltViewModel()) {
                     .padding(top = 80.dp, start = 20.dp, end = 20.dp)
             ) {
                 LocationHeader(Modifier.padding(bottom = 20.dp))
-                WeatherCard(viewModel.tempDisplayState.collectAsState().value, viewModel::onEvent)
+                WeatherCard(
+                    viewModel.tempDisplayState.collectAsState().value,
+                    viewModel::onEvent
+                )
                 ForecastCard()
             }
         }
         else -> {}
     }
 }
+
 
 @Composable
 fun LocationHeader(
@@ -69,7 +78,7 @@ fun LocationHeader(
         verticalAlignment = CenterVertically,
         modifier = modifier
             .fillMaxWidth()
-            .height(50.dp)
+            .height(60.dp)
     ) {
         Icon(
             painter = painterResource(id = R.drawable.ic_baseline_location_on_24),
@@ -98,8 +107,48 @@ fun WeatherCard(
     //content: @Composable () -> Unit
 ) {
 
-//    var currentTempDisplayState by remember { mutableStateOf(tempDisplayState) }
+    // region Animation variables
+    val waveWidth = 900
+    val originalY = 140f
+    val path = Path()
 
+    val deltaXAnim = rememberInfiniteTransition()
+    val dx by deltaXAnim.animateFloat(
+        initialValue = 0f,
+        targetValue = 1f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(25000, easing = LinearEasing),
+            repeatMode = RepeatMode.Restart
+        )
+    )
+    val dx2 by deltaXAnim.animateFloat(
+        initialValue = 0f,
+        targetValue = 1f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(25000, easing = LinearEasing),
+            repeatMode = RepeatMode.Restart,
+            initialStartOffset = StartOffset(1500)
+        )
+    )
+    val deltaYAnim = rememberInfiniteTransition()
+    val waveHeight by deltaYAnim.animateFloat(
+        initialValue = 80f,//50
+        targetValue = 140f,//140
+        animationSpec = infiniteRepeatable(
+            animation = tween(10000, easing = LinearEasing),
+            repeatMode = RepeatMode.Reverse
+        )
+    )
+    val waveHeight2 by deltaYAnim.animateFloat(
+        initialValue = 120f,//100
+        targetValue = 150f,//150
+        animationSpec = infiniteRepeatable(
+            animation = tween(5000, easing = LinearEasing),
+            repeatMode = RepeatMode.Reverse
+        )
+    )
+
+    // endregion
 
     Card(
         shape = RoundedCornerShape(16.dp),
@@ -107,20 +156,23 @@ fun WeatherCard(
         elevation = 0.dp,
         modifier = modifier
             .fillMaxWidth()
+
     ) {
         Column(
             horizontalAlignment = Alignment.CenterHorizontally,
             modifier = Modifier
                 .fillMaxWidth()
                 .background(gradients.middayGradient)
-                .padding(vertical = 20.dp)
+                .padding(top = 20.dp)
+
         ) {
             Text(
                 "Saturday, 23 Oct",
                 style = WeatherAppTheme.typography.main,
                 fontWeight = FontWeight.Light,
-                fontSize = 13.sp,
-                modifier = Modifier.padding(bottom = 20.dp)
+                fontSize = 16.sp,
+                color = Color.White.copy(alpha = 0.6f),
+                modifier = Modifier.padding(bottom = 40.dp)
             )
             Crossfade(
                 targetState = tempDisplayState
@@ -131,6 +183,8 @@ fun WeatherCard(
                             text = "Actual",
                             style = WeatherAppTheme.typography.main,
                             fontSize = 14.sp,
+                            textAlign = TextAlign.Center,
+                            modifier = Modifier.fillMaxWidth()
                         )
                     }
                     TempDisplayState.Feeling -> {
@@ -138,6 +192,9 @@ fun WeatherCard(
                             text = "Feels like",
                             style = WeatherAppTheme.typography.main,
                             fontSize = 14.sp,
+                            textAlign = TextAlign.Center,
+                            modifier = Modifier.fillMaxWidth()
+
                         )
                     }
                 }
@@ -146,7 +203,8 @@ fun WeatherCard(
             val swipeableSpace = 90.dp
             val swipeableState = rememberSwipeableState(tempDisplayState)
             val sizePx = with(LocalDensity.current) { swipeableSpace.toPx() }
-            val anchors = mapOf(0f to TempDisplayState.Feeling, sizePx to TempDisplayState.Actual)
+            val anchors =
+                mapOf(0f to TempDisplayState.Feeling, -sizePx to TempDisplayState.Actual)
             //val scope = rememberCoroutineScope()
             if (swipeableState.isAnimationRunning) {
                 DisposableEffect(Unit) {
@@ -182,25 +240,32 @@ fun WeatherCard(
                         thresholds = { _, _ -> FractionalThreshold(0.3f) },
                         orientation = Orientation.Horizontal
                     )
-                    .offset(-swipeableSpace + 50.dp, 0.dp)
+                    .offset(-swipeableSpace + 144.dp, 0.dp)
             ) {
-                Row(Modifier.offset { IntOffset(swipeableState.offset.value.roundToInt(), 0) }) {
-                    Text(
-                        text = "22 C°",
-                        style = WeatherAppTheme.typography.accent,
-                        color = Color.White,
-                        modifier = Modifier
-                            .graphicsLayer {
-                                alpha = 0f + swipeableState.offset.value / 100
-                            }
+                Row(Modifier.offset {
+                    IntOffset(
+                        swipeableState.offset.value.roundToInt(),
+                        0
                     )
+                }) {
                     Text(
                         text = "33 C°",
                         style = WeatherAppTheme.typography.accent,
                         color = Color.White,
+                        fontWeight = FontWeight.Medium,
                         modifier = Modifier
                             .graphicsLayer {
-                                alpha = 1f - swipeableState.offset.value / 100
+                                alpha = 1f + swipeableState.offset.value / 100
+                            }
+                    )
+                    Text(
+                        text = "22 C°",
+                        style = WeatherAppTheme.typography.accent,
+                        fontWeight = FontWeight.Medium,
+                        color = Color.White,
+                        modifier = Modifier
+                            .graphicsLayer {
+                                alpha = 0f - swipeableState.offset.value / 100
                             }
                     )
                 }
@@ -271,8 +336,68 @@ fun WeatherCard(
             Text(
                 text = "Rainy",
                 style = WeatherAppTheme.typography.main,
-                fontSize = 40.sp
+                fontSize = 30.sp
             )
+            Card(backgroundColor = Color.Transparent,
+                elevation = 0.dp,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(200.dp)
+                    .drawBehind {
+//region Waves
+                        drawPath(
+                            path = path,
+                            color = Color.White.copy(alpha = 1f)
+                        )
+                        path.reset()
+                        val halfWaveWidth = waveWidth / 2
+                        path.moveTo(-waveWidth + (waveWidth * dx2), originalY.dp.toPx())
+
+                        for (i in -waveWidth..(size.width.toInt() + waveWidth) step waveWidth) {
+                            path.relativeQuadraticBezierTo(
+                                halfWaveWidth.toFloat() / 2,
+                                -waveHeight2,
+                                halfWaveWidth.toFloat(),
+                                0f
+                            )
+                            path.relativeQuadraticBezierTo(
+                                halfWaveWidth.toFloat() / 2,
+                                waveHeight2,
+                                halfWaveWidth.toFloat(),
+                                0f
+                            )
+                        }
+
+                        path.lineTo(size.width, size.height)
+                        path.lineTo(0f, size.height)
+                        path.close()
+
+                        drawPath(path = path, color = Color.White.copy(alpha = 0.3f))
+
+                        path.reset()
+                        path.moveTo(-waveWidth + (waveWidth * dx), originalY.dp.toPx())
+
+                        for (i in -waveWidth..(size.width.toInt() + waveWidth) step waveWidth) {
+                            path.relativeQuadraticBezierTo(
+                                halfWaveWidth.toFloat() / 2,
+                                -waveHeight,
+                                halfWaveWidth.toFloat(),
+                                0f
+                            )
+                            path.relativeQuadraticBezierTo(
+                                halfWaveWidth.toFloat() / 2,
+                                waveHeight,
+                                halfWaveWidth.toFloat(),
+                                0f
+                            )
+                        }
+
+                        path.lineTo(size.width, size.height)
+                        path.lineTo(0f, size.height)
+                        path.close()
+                    }
+                // endregion
+            ) { Unit }
         }
     }
 }
