@@ -2,15 +2,9 @@
 
 package com.example.weatherapp.ui.screens
 
-import android.Manifest
-import android.graphics.drawable.Icon
-import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.Crossfade
 import androidx.compose.animation.core.*
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.Orientation
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -19,14 +13,11 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Alignment.Companion.CenterVertically
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawBehind
-import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.painter.Painter
-import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
@@ -37,13 +28,10 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.example.weatherapp.R
-import com.example.weatherapp.ui.theme.WeatherAppCorners
+import com.example.weatherapp.data.service.dto.WeatherResponse
 import com.example.weatherapp.ui.theme.WeatherAppTheme
-import com.example.weatherapp.ui.theme.WeatherAppTypography
 import com.example.weatherapp.ui.theme.gradients
 import com.google.accompanist.permissions.ExperimentalPermissionsApi
-import com.google.accompanist.permissions.rememberMultiplePermissionsState
-import kotlinx.coroutines.launch
 import kotlin.math.roundToInt
 
 
@@ -63,12 +51,22 @@ fun TodayScreen(viewModel: MainScreenViewModel = hiltViewModel()) {
                     viewModel::onEvent
                 )
                 ForecastCard()
+                val weather = viewModel.weather.collectAsState(initial = null).value
+                WeatherDemo(weather = weather)
             }
         }
         else -> {}
     }
 }
 
+@Composable
+fun WeatherDemo(weather: WeatherResponse?) {
+    if (weather == null){
+        Text(text = "loading")
+    } else {
+        Text(text = "The weather in ${weather.name} right now feels like  ${weather.main.feelsLike}")
+    }
+}
 
 @Composable
 fun LocationHeader(

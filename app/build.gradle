@@ -22,7 +22,11 @@ android {
     }
 
     buildTypes {
+        debug{
+            buildConfigField("String", "API_KEY", "\"${findProperty("openweather.apiKey")}\"")
+        }
         release {
+            buildConfigField("String", "API_KEY", "\"${findProperty("openweather.apiKey")}\"")
             minifyEnabled true
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
         }
