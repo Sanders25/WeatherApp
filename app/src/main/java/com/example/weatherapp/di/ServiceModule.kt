@@ -1,7 +1,6 @@
 package com.example.weatherapp.di
 
-import com.example.weatherapp.data.service.OpenWeatherMapLocationService
-import com.example.weatherapp.data.service.OpenWeatherMapWeatherService
+import com.example.weatherapp.data.service.OpenWeatherService
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -17,19 +16,9 @@ object ServiceModule {
 
     @Provides
     @Singleton
-    fun provideOpenWeatherService(): OpenWeatherMapWeatherService{
+    fun provideOpenWeatherService(): OpenWeatherService{
         return Retrofit.Builder()
-            .baseUrl("https://api.openweathermap.org/data/2.5/")
-            .addConverterFactory(GsonConverterFactory.create())
-            .build()
-            .create()
-    }
-
-    @Provides
-    @Singleton
-    fun provideOpenLocationService(): OpenWeatherMapLocationService{
-        return Retrofit.Builder()
-            .baseUrl("https://api.openweathermap.org/geo/1.0/")
+            .baseUrl("https://api.openweathermap.org/")
             .addConverterFactory(GsonConverterFactory.create())
             .build()
             .create()

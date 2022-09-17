@@ -4,6 +4,7 @@ package com.example.weatherapp.ui.screens
 
 import androidx.compose.animation.Crossfade
 import androidx.compose.animation.core.*
+import androidx.compose.compiler.plugins.kotlin.lower.forEachWith
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.Orientation
 import androidx.compose.foundation.layout.*
@@ -29,8 +30,10 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.example.weatherapp.R
+import com.example.weatherapp.data.service.WeatherRepository
 import com.example.weatherapp.data.service.dto.location.LocationResponse
 import com.example.weatherapp.data.service.dto.weather.WeatherResponse
+import com.example.weatherapp.data.service.dto.weather.forecast.ForecastResponse
 import com.example.weatherapp.ui.theme.Gradients
 import com.example.weatherapp.ui.theme.WeatherAppStyles
 import com.example.weatherapp.ui.theme.WeatherAppTheme
@@ -44,6 +47,7 @@ import kotlin.math.roundToInt
 fun TodayScreen(viewModel: MainScreenViewModel = hiltViewModel()) {
 
     val weather by viewModel.weather.collectAsState(initial = null)
+    val weatherForecast by viewModel.weatherForecast.collectAsState(initial = null)
     val location by viewModel.location.collectAsState(initial = null)
 
     when (viewModel.uiState.collectAsState().value) {
@@ -64,7 +68,7 @@ fun TodayScreen(viewModel: MainScreenViewModel = hiltViewModel()) {
                         viewModel.tempDisplayState.collectAsState().value,
                         viewModel::onEvent,
                     )
-                    ForecastCard()
+                    ForecastCard(/*weatherForecast*/)
                 }
             }
         }
@@ -444,9 +448,9 @@ fun WeatherCard(
     }
 }
 
-@Preview
 @Composable
 fun ForecastCard(
+    //forecast: ForecastResponse?,
     modifier: Modifier = Modifier
 ) {
     Card(modifier = modifier.fillMaxWidth()) {
@@ -465,6 +469,9 @@ fun ForecastCard(
                 )
             }
             Row(Modifier.fillMaxWidth()) {
+                /*forecast?.list?.forEach { day ->
+
+                }*/
                 ForecastPill(
                     hour = "18:00",
                     icon = painterResource(id = R.drawable.ic_rainy),

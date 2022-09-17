@@ -3,10 +3,10 @@ package com.example.weatherapp.ui.screens
 import android.content.Context
 import androidx.lifecycle.ViewModel
 import com.example.weatherapp.data.service.WeatherRepository
+import com.example.weatherapp.data.service.WeatherRepository.SimplifiedForecast
 import com.example.weatherapp.data.service.dto.location.LocationResponse
 import com.example.weatherapp.data.service.dto.weather.WeatherResponse
-import com.example.weatherapp.ui.theme.WeatherAppStyles
-import com.example.weatherapp.ui.theme.WeatherAppTheme
+import com.example.weatherapp.data.service.dto.weather.forecast.ForecastResponse
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.*
@@ -24,7 +24,8 @@ class MainScreenViewModel @Inject constructor(
     private val _tempDisplayState = MutableStateFlow(TempDisplayState.Feeling)
     val tempDisplayState: StateFlow<TempDisplayState> = _tempDisplayState
 
-    val weather: Flow<WeatherResponse?> = repository.currentLocationWeather(appContext)
+    val weather: Flow<WeatherResponse?> = repository.currentWeather(appContext)
+    val weatherForecast: Flow<List<SimplifiedForecast>> = repository.weatherForecast(appContext)
     val location: Flow<LocationResponse?> = repository.currentLocation(appContext)
 
 
