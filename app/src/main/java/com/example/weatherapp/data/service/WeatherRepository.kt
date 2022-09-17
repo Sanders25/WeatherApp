@@ -3,30 +3,37 @@ package com.example.weatherapp.data.service
 import android.content.Context
 import android.location.Location
 import android.os.Looper
-import androidx.lifecycle.viewModelScope
 import com.example.weatherapp.BuildConfig
-import com.example.weatherapp.data.service.dto.Weather
-import com.example.weatherapp.data.service.dto.WeatherResponse
+import com.example.weatherapp.data.service.dto.location.LocationResponse
+import com.example.weatherapp.data.service.dto.weather.WeatherResponse
 import com.google.android.gms.location.LocationCallback
 import com.google.android.gms.location.LocationRequest
 import com.google.android.gms.location.LocationResult
 import com.google.android.gms.location.LocationServices
-import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.*
-import kotlinx.coroutines.launch
 import javax.inject.Inject
 
-class WeatherRepository {
+class WeatherRepository @Inject constructor(
+    private val weatherService : OpenWeatherMapWeatherService,
+    private val locationService : OpenWeatherMapLocationService
+) {
 
-    private val service = OpenWeatherMapService()
+
+
     private val weather = MutableStateFlow<WeatherResponse?>(null)
 
     fun getWeather(): Flow<WeatherResponse?> = weather
 
     fun currentLocationWeather(appContext: Context): Flow<WeatherResponse?> {
         return locationFlow(appContext).map {
-            service.getCurrentWeather(it.latitude, it.longitude, BuildConfig.API_KEY).body()
+            weatherService.getCurrentWeather(it.latitude, it.longitude, BuildConfig.API_KEY).body()
+        }
+    }
+
+    fun currentLocation(appContext: Context): Flow<LocationResponse?> {
+        return locationFlow(appContext).map {
+            locationService.getCurrentLocation(it.latitude, it.longitude, BuildConfig.API_KEY).body()
         }
     }
 

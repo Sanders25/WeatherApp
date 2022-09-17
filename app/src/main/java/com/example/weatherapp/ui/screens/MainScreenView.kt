@@ -14,6 +14,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Alignment.Companion.CenterVertically
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.graphicsLayer
@@ -28,31 +29,43 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.example.weatherapp.R
-import com.example.weatherapp.data.service.dto.WeatherResponse
+import com.example.weatherapp.data.service.dto.location.LocationResponse
+import com.example.weatherapp.data.service.dto.weather.WeatherResponse
+import com.example.weatherapp.ui.theme.Gradients
+import com.example.weatherapp.ui.theme.WeatherAppStyles
 import com.example.weatherapp.ui.theme.WeatherAppTheme
-import com.example.weatherapp.ui.theme.gradients
 import com.google.accompanist.permissions.ExperimentalPermissionsApi
+import java.time.LocalDate
+import java.time.format.TextStyle
+import java.util.*
 import kotlin.math.roundToInt
-
 
 @Composable
 fun TodayScreen(viewModel: MainScreenViewModel = hiltViewModel()) {
 
+    val weather by viewModel.weather.collectAsState(initial = null)
+    val location by viewModel.location.collectAsState(initial = null)
+
     when (viewModel.uiState.collectAsState().value) {
         is MainScreenViewModel.UiState.Idle -> {
-            Column(
-                Modifier
-                    .fillMaxSize()
-                    .padding(top = 80.dp, start = 20.dp, end = 20.dp)
-            ) {
-                LocationHeader(Modifier.padding(bottom = 20.dp))
-                WeatherCard(
-                    viewModel.tempDisplayState.collectAsState().value,
-                    viewModel::onEvent
-                )
-                ForecastCard()
-                val weather = viewModel.weather.collectAsState(initial = null).value
-                WeatherDemo(weather = weather)
+            WeatherAppTheme(style = weather?.style() ?: WeatherAppStyles.Clear) {
+                Column(
+                    Modifier
+                        .fillMaxSize()
+                        .padding(top = 80.dp, start = 20.dp, end = 20.dp)
+                ) {
+                    LocationHeader(
+                        location,
+                        weather?.name,
+                        Modifier.padding(bottom = 20.dp)
+                    )
+                    WeatherCard(
+                        weather,
+                        viewModel.tempDisplayState.collectAsState().value,
+                        viewModel::onEvent,
+                    )
+                    ForecastCard()
+                }
             }
         }
         else -> {}
@@ -60,18 +73,14 @@ fun TodayScreen(viewModel: MainScreenViewModel = hiltViewModel()) {
 }
 
 @Composable
-fun WeatherDemo(weather: WeatherResponse?) {
-    if (weather == null){
-        Text(text = "loading")
-    } else {
-        Text(text = "The weather in ${weather.name} right now feels like  ${weather.main.feelsLike}")
-    }
-}
-
-@Composable
 fun LocationHeader(
+    location: LocationResponse?,
+    subLocation: String?,
     modifier: Modifier = Modifier
 ) {
+    val subLocationName = subLocation ?: "..."
+    val localLocationName = location?.first()?.localNames?.ru ?: "..."
+
     Row(
         verticalAlignment = CenterVertically,
         modifier = modifier
@@ -84,12 +93,13 @@ fun LocationHeader(
         )
         Box(modifier = Modifier.fillMaxSize()) {
             Text(
-                text = "St. Petersburg",
+                text = localLocationName,
                 style = WeatherAppTheme.typography.header,
                 modifier = Modifier.align(Alignment.TopStart)
             )
+
             Text(
-                text = "Avtovo distr.",
+                text = subLocationName,
                 style = WeatherAppTheme.typography.caption,
                 modifier = Modifier.align(Alignment.BottomStart)
             )
@@ -99,15 +109,33 @@ fun LocationHeader(
 
 @Composable
 fun WeatherCard(
+    weather: WeatherResponse?,
     tempDisplayState: TempDisplayState,
     onEvent: (UiEvent) -> Unit,
     modifier: Modifier = Modifier,
     //content: @Composable () -> Unit
 ) {
+    val date: String
+
+    with(LocalDate.now()) {
+        date = "${this.dayOfWeek.getDisplayName(TextStyle.FULL, Locale.getDefault())}, " +
+                "${this.dayOfMonth} " +
+                this.month.getDisplayName(TextStyle.FULL, Locale.getDefault())
+    }
+
+    var actualTemp = "--"
+    var fellingTemp = "--"
+    var weatherName = "--"
+
+    weather?.let {
+        actualTemp = it.main.temp.roundToInt().toString()
+        fellingTemp = it.main.temp.roundToInt().toString()
+        weatherName = it.weather.first().description
+    }
 
     // region Animation variables
-    val waveWidth = 900
-    val originalY = 140f
+    val waveWidth = 800
+    val originalY = 120f
     val path = Path()
 
     val deltaXAnim = rememberInfiniteTransition()
@@ -133,15 +161,15 @@ fun WeatherCard(
         initialValue = 80f,//50
         targetValue = 140f,//140
         animationSpec = infiniteRepeatable(
-            animation = tween(10000, easing = LinearEasing),
+            animation = tween(15000, easing = LinearEasing),
             repeatMode = RepeatMode.Reverse
         )
     )
     val waveHeight2 by deltaYAnim.animateFloat(
-        initialValue = 120f,//100
-        targetValue = 150f,//150
+        initialValue = 100f,//100
+        targetValue = 145f,//150
         animationSpec = infiniteRepeatable(
-            animation = tween(5000, easing = LinearEasing),
+            animation = tween(15000, easing = LinearEasing),
             repeatMode = RepeatMode.Reverse
         )
     )
@@ -160,12 +188,12 @@ fun WeatherCard(
             horizontalAlignment = Alignment.CenterHorizontally,
             modifier = Modifier
                 .fillMaxWidth()
-                .background(gradients.middayGradient)
+                .background(weather?.background() ?: Gradients.clearGradient)
                 .padding(top = 20.dp)
 
         ) {
             Text(
-                "Saturday, 23 Oct",
+                text = date,
                 style = WeatherAppTheme.typography.main,
                 fontWeight = FontWeight.Light,
                 fontSize = 16.sp,
@@ -178,7 +206,7 @@ fun WeatherCard(
                 when (state) {
                     TempDisplayState.Actual -> {
                         Text(
-                            text = "Actual",
+                            text = "Реальная",
                             style = WeatherAppTheme.typography.main,
                             fontSize = 14.sp,
                             textAlign = TextAlign.Center,
@@ -187,7 +215,7 @@ fun WeatherCard(
                     }
                     TempDisplayState.Feeling -> {
                         Text(
-                            text = "Feels like",
+                            text = "Ощущается как",
                             style = WeatherAppTheme.typography.main,
                             fontSize = 14.sp,
                             textAlign = TextAlign.Center,
@@ -247,7 +275,7 @@ fun WeatherCard(
                     )
                 }) {
                     Text(
-                        text = "33 C°",
+                        text = "$fellingTemp C°",
                         style = WeatherAppTheme.typography.accent,
                         color = Color.White,
                         fontWeight = FontWeight.Medium,
@@ -257,7 +285,7 @@ fun WeatherCard(
                             }
                     )
                     Text(
-                        text = "22 C°",
+                        text = "$actualTemp C°",
                         style = WeatherAppTheme.typography.accent,
                         fontWeight = FontWeight.Medium,
                         color = Color.White,
@@ -325,77 +353,93 @@ fun WeatherCard(
                     modifier = Modifier.size(10.dp)
                 )*/
             }
-            Icon(
-                painter = painterResource(id = R.drawable.ic_rainy),
-                contentDescription = "Rainy",
-                tint = Color.White,
-                modifier = Modifier.size(50.dp)
-            )
+            if (weather != null) {
+                Icon(
+                    painter = painterResource(id = weather.icon()),
+                    contentDescription = "Rainy",
+                    tint = Color.White,
+                    modifier = Modifier.size(50.dp)
+                )
+            }
             Text(
-                text = "Rainy",
+                text = weatherName,
                 style = WeatherAppTheme.typography.main,
-                fontSize = 30.sp
-            )
-            Card(backgroundColor = Color.Transparent,
-                elevation = 0.dp,
+                fontSize = 20.sp,
+                textAlign = TextAlign.Center,
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(200.dp)
-                    .drawBehind {
+            )
+            Box() {
+                Card(backgroundColor = Color.Transparent,
+                    elevation = 0.dp,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(200.dp)
+                        .drawBehind {
 //region Waves
-                        drawPath(
-                            path = path,
-                            color = Color.White.copy(alpha = 1f)
-                        )
-                        path.reset()
-                        val halfWaveWidth = waveWidth / 2
-                        path.moveTo(-waveWidth + (waveWidth * dx2), originalY.dp.toPx())
+                            drawPath(
+                                path = path,
+                                color = Color.White.copy(alpha = 1f)
+                            )
+                            path.reset()
+                            val halfWaveWidth = waveWidth / 2
+                            path.moveTo(-waveWidth + (waveWidth * dx2), originalY.dp.toPx())
 
-                        for (i in -waveWidth..(size.width.toInt() + waveWidth) step waveWidth) {
-                            path.relativeQuadraticBezierTo(
-                                halfWaveWidth.toFloat() / 2,
-                                -waveHeight2,
-                                halfWaveWidth.toFloat(),
-                                0f
-                            )
-                            path.relativeQuadraticBezierTo(
-                                halfWaveWidth.toFloat() / 2,
-                                waveHeight2,
-                                halfWaveWidth.toFloat(),
-                                0f
-                            )
+                            for (i in -waveWidth..(size.width.toInt() + waveWidth) step waveWidth) {
+                                path.relativeQuadraticBezierTo(
+                                    halfWaveWidth.toFloat() / 2,
+                                    -waveHeight2,
+                                    halfWaveWidth.toFloat(),
+                                    0f
+                                )
+                                path.relativeQuadraticBezierTo(
+                                    halfWaveWidth.toFloat() / 2,
+                                    waveHeight2,
+                                    halfWaveWidth.toFloat(),
+                                    0f
+                                )
+                            }
+
+                            path.lineTo(size.width, size.height)
+                            path.lineTo(0f, size.height)
+                            path.close()
+
+                            drawPath(path = path, color = Color.White.copy(alpha = 0.3f))
+
+                            path.reset()
+                            path.moveTo(-waveWidth + (waveWidth * dx), originalY.dp.toPx())
+
+                            for (i in -waveWidth..(size.width.toInt() + waveWidth) step waveWidth) {
+                                path.relativeQuadraticBezierTo(
+                                    halfWaveWidth.toFloat() / 2,
+                                    -waveHeight,
+                                    halfWaveWidth.toFloat(),
+                                    0f
+                                )
+                                path.relativeQuadraticBezierTo(
+                                    halfWaveWidth.toFloat() / 2,
+                                    waveHeight,
+                                    halfWaveWidth.toFloat(),
+                                    0f
+                                )
+                            }
+
+                            path.lineTo(size.width, size.height)
+                            path.lineTo(0f, size.height)
+                            path.close()
                         }
+                    // endregion
+                ) { Unit }
 
-                        path.lineTo(size.width, size.height)
-                        path.lineTo(0f, size.height)
-                        path.close()
+/*                Card(
+                    shape = RoundedCornerShape(20.dp),
+                    elevation = 2.dp,
+                    backgroundColor = Color.White.copy(alpha = 1f),
+                    modifier = Modifier.height(120.dp).fillMaxWidth().align(Alignment.BottomCenter).padding(14.dp)
+                ) {
 
-                        drawPath(path = path, color = Color.White.copy(alpha = 0.3f))
-
-                        path.reset()
-                        path.moveTo(-waveWidth + (waveWidth * dx), originalY.dp.toPx())
-
-                        for (i in -waveWidth..(size.width.toInt() + waveWidth) step waveWidth) {
-                            path.relativeQuadraticBezierTo(
-                                halfWaveWidth.toFloat() / 2,
-                                -waveHeight,
-                                halfWaveWidth.toFloat(),
-                                0f
-                            )
-                            path.relativeQuadraticBezierTo(
-                                halfWaveWidth.toFloat() / 2,
-                                waveHeight,
-                                halfWaveWidth.toFloat(),
-                                0f
-                            )
-                        }
-
-                        path.lineTo(size.width, size.height)
-                        path.lineTo(0f, size.height)
-                        path.close()
-                    }
-                // endregion
-            ) { Unit }
+                }*/
+            }
         }
     }
 }
@@ -449,11 +493,39 @@ fun ForecastPill(
     ) {
         Column(
             horizontalAlignment = Alignment.CenterHorizontally,
-            modifier = Modifier.background(gradients.middayGradient)
+            modifier = Modifier.background(WeatherAppTheme.colors.tintColor)
         ) {
             Text(text = hour)
             Icon(painter = icon, contentDescription = "", modifier = Modifier.size(20.dp))
             Text(text = "Now")
         }
+    }
+}
+
+private fun WeatherResponse.icon(): Int {
+    val condition = weather.first().main
+
+    return when {
+        condition.contains("cloud", ignoreCase = true) -> R.drawable.ic_cloudy
+        condition.contains("rain", ignoreCase = true) -> R.drawable.ic_rainy
+        else -> R.drawable.ic_clear
+    }
+}
+
+private fun WeatherResponse.style(): WeatherAppStyles {
+    val condition = weather.first().main
+    return when {
+        condition.contains("cloud", ignoreCase = true) -> WeatherAppStyles.Cloudy
+        condition.contains("rain", ignoreCase = true) -> WeatherAppStyles.Rainy
+        else -> WeatherAppStyles.Clear
+    }
+}
+
+private fun WeatherResponse.background(): Brush {
+    val condition = weather.first().main
+    return when {
+        condition.contains("cloud", ignoreCase = true) -> Gradients.cloudyGradient
+        condition.contains("rain", ignoreCase = true) -> Gradients.rainyGradient
+        else -> Gradients.clearGradient
     }
 }

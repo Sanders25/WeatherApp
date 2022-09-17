@@ -45,7 +45,7 @@ object WeatherAppTheme {
 }
 
 enum class WeatherAppStyles {
-    Blank
+    Clear, Cloudy, Rainy
 }
 
 enum class WeatherAppSizes {

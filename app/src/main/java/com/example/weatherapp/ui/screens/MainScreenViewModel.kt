@@ -1,18 +1,15 @@
 package com.example.weatherapp.ui.screens
 
 import android.content.Context
-import android.location.Location
 import androidx.lifecycle.ViewModel
-import androidx.lifecycle.viewModelScope
-import com.example.weatherapp.BuildConfig
-import com.example.weatherapp.data.service.OpenWeatherMapService
 import com.example.weatherapp.data.service.WeatherRepository
-import com.example.weatherapp.data.service.dto.WeatherResponse
-import com.google.android.gms.location.*
+import com.example.weatherapp.data.service.dto.location.LocationResponse
+import com.example.weatherapp.data.service.dto.weather.WeatherResponse
+import com.example.weatherapp.ui.theme.WeatherAppStyles
+import com.example.weatherapp.ui.theme.WeatherAppTheme
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.*
-import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 @HiltViewModel
@@ -28,6 +25,8 @@ class MainScreenViewModel @Inject constructor(
     val tempDisplayState: StateFlow<TempDisplayState> = _tempDisplayState
 
     val weather: Flow<WeatherResponse?> = repository.currentLocationWeather(appContext)
+    val location: Flow<LocationResponse?> = repository.currentLocation(appContext)
+
 
     init {
 

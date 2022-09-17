@@ -72,6 +72,7 @@ class MainActivity : ComponentActivity() {
                 } else {
                     ShowPlaceholder(locationPermissionsState)
                 }
+
             }
         }
     }

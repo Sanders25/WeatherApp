@@ -16,7 +16,7 @@ import com.example.weatherapp.R
 
 @Composable
 fun WeatherAppTheme(
-    style: WeatherAppStyles = WeatherAppStyles.Blank,
+    style: WeatherAppStyles = WeatherAppStyles.Clear,
     textSize: WeatherAppSizes = WeatherAppSizes.Medium,
     paddingSize: WeatherAppSizes = WeatherAppSizes.Medium,
     corners: WeatherAppCorners = WeatherAppCorners.Rounded,
@@ -26,12 +26,16 @@ fun WeatherAppTheme(
     val colors = when (darkTheme) {
         true -> {
             when (style) {
-                WeatherAppStyles.Blank -> BlankPalette
+                WeatherAppStyles.Clear -> ClearPalette
+                WeatherAppStyles.Cloudy -> CloudyPalette
+                WeatherAppStyles.Rainy -> RainyPalette
             }
         }
         false -> {
             when (style) {
-                WeatherAppStyles.Blank -> BlankPalette
+                WeatherAppStyles.Clear -> ClearPalette
+                WeatherAppStyles.Cloudy -> CloudyPalette
+                WeatherAppStyles.Rainy -> RainyPalette
             }
         }
     }
@@ -46,14 +50,22 @@ fun WeatherAppTheme(
         Font(R.font.dosis_extrabold, FontWeight.ExtraBold),
     )
 
+    val Comfortaa = FontFamily(
+        Font(R.font.comfortaa_light, FontWeight.Light),
+        Font(R.font.comfortaa_regular, FontWeight.Normal),
+        Font(R.font.comfortaa_medium, FontWeight.Medium),
+        Font(R.font.comfortaa_semibold, FontWeight.SemiBold),
+        Font(R.font.comfortaa_bold, FontWeight.Bold),
+    )
+
     val typography = WeatherAppTypography(
         header = TextStyle(
             fontSize = when (textSize) {
                 WeatherAppSizes.Small -> 24.sp
-                WeatherAppSizes.Medium -> 32.sp
+                WeatherAppSizes.Medium -> 28.sp
                 WeatherAppSizes.Big -> 36.sp
             },
-            fontFamily = Dosis,
+            fontFamily = Comfortaa,
             fontWeight = FontWeight.Bold
         ),
         body = TextStyle(
@@ -70,18 +82,18 @@ fun WeatherAppTheme(
                 WeatherAppSizes.Medium -> 16.sp
                 WeatherAppSizes.Big -> 22.sp
             },
-            fontFamily = Dosis,
+            fontFamily = Comfortaa,
             fontWeight = FontWeight.Normal
         ),
         main = TextStyle(
             fontSize = 20.sp,
-            fontFamily = Dosis,
+            fontFamily = Comfortaa,
             fontWeight = FontWeight.Normal,
             color = Color.White
         ),
         accent = TextStyle(
             fontSize = 40.sp,
-            fontFamily = Dosis,
+            fontFamily = Comfortaa,
             fontWeight = FontWeight.Bold
         )
 
